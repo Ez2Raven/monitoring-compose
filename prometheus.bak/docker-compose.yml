@@ -1,0 +1,36 @@
+version: '3.3'
+networks:
+  web:
+    external: true
+
+volumes:
+    prometheus_data: {}
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./config/:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention=200h'
+      - '--web.enable-lifecycle'
+    # restart: unless-stopped
+    ports:
+     - "9090"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus.rule=Host(`yourhosthere`)"
+      - "traefik.http.routers.prometheus.entrypoints=websecure"
+      - "traefik.http.routers.prometheus.tls.certresolver=myresolver"
+      - "traefik.http.services.prometheus.loadbalancer.server.port=9090"
+    networks:
+      - web
+    extra_hosts:
+      - "host.docker.internal:<dockerhostiphere>"
